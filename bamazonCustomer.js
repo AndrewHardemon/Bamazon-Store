@@ -61,45 +61,42 @@ function menuCustomer(){
     //Which was picked
     console.log(res.menu);
     if (res.menu === "products") {
-      console.log("Products");
-      afterConnection();
-      menuCustomer();
+      console.log("All products");
+      showProducts();
     }
     if (res.menu === "buy") {
       console.log("Buy it");
       buyProduct();
-      //menuCustomer();
     }
     else if (res.menu === "inventory") {
       console.log("Products lower than 5")
       lowConnection();
-      //menuCustomer();
     }
     else if (res.menu === "add") {
-      console.log("this works")
-      updateProduct()
+      console.log("Adding to an existing product")
+      plusProduct()
     }
     else if (res.menu === "new") {
-      console.log("this works")
+      console.log("Adding a new product")
       inquirerAdd();
-      addProduct();
     }
     else if (res.menu === "exit") {
-      console.log("this works")
+      console.log("Goodbye")
       connection.end();
     }
-    else {
-      menuCustomer();
-    }
+    // else {
+    //   menuCustomer();
+    // }
   });
 }
 
 //Check Products
-function afterConnection() {
+function showProducts() {
   connection.query("SELECT * FROM products", function(err, res) {
     if (err) throw err;
     console.log(res);
     //connection.end();
+    menuCustomer();
   });
 }
 
@@ -118,20 +115,19 @@ function buyProduct(){
       name: "num"
     }
   ]).then(function(res) {
-    console.log(res.name);
-    console.log(res.num);
+    // console.log(res.name);
+    // console.log(res.num);
     checkProduct(res.name, res.num);
     })
   }
 
 //Check the product if you can buy it
 function checkProduct(name, num){
-  // name = parseInt(name)
   num = parseInt(num)
     connection.query("SELECT * FROM products WHERE product_name = ?", [name], function(err, res){
     if (err) throw err;
-    console.log(res)
-    //console.log(res[0].stock_quality)
+    //console.log(res)
+
     var amount = parseInt(res[0].stock_quality) - num
     
     if(res.stock_quality === 0){
@@ -147,22 +143,21 @@ function checkProduct(name, num){
 
 //Add more stock to a product
 function updateProduct(name, diff) {
-  //connection.query("SQL STRING", arguments, callback()) //This is the order of operations
  connection.query(
-      "UPDATE products SET ? WHERE ?",
-      [
-        {
-          stock_quality: diff
-        },
-        {
-          product_name: name
-        }
-      ],
-      function(err, res) {
-        if (err) throw err;
-        console.log(name + " have been updated!\n");
-        menuCustomer();
-      });
+  "UPDATE products SET ? WHERE ?",
+  [
+    {
+      stock_quality: diff
+    },
+    {
+      product_name: name
+    }
+  ],
+  function(err, res) {
+    if (err) throw err;
+    console.log(name + " have been updated!\n");
+    menuCustomer();
+  });
 }
 
 //Check for low stock products
@@ -170,11 +165,40 @@ function lowConnection() {
   connection.query("SELECT * FROM products WHERE stock_quality <= 5", function(err, res) {
     if (err) throw err;
     console.log(res);
-    //connection.end();
+
+    menuCustomer()
   });
 }
 
-//Helps add new product using inquirer (Part 1)
+//Add to product
+function plusProduct(){
+  inquirer.prompt([
+    {
+      type: "input",
+      message: "Give the name of the product you want",
+      name: "name"
+    },
+    {
+      type: "input",
+      message: "How many of the product do you want",
+      name: "num"
+    }
+  ]).then(function(res) {
+    var num = parseInt(res.num);
+    var name = res.name;
+    connection.query("SELECT * FROM products WHERE product_name = ?", [name], function(err, res){
+      if (err) throw err;
+      console.log(res)
+
+      var amount = parseInt(res[0].stock_quality) + num
+      
+      console.log(`There are ${amount} ${name} now`)
+      updateProduct(name, amount)
+      })
+    })
+}
+
+//Adds a new product
 function inquirerAdd(){
   inquirer.prompt([
     {
@@ -203,24 +227,19 @@ function inquirerAdd(){
       name: "stock_quality"
     }
   ]).then(function(res) {
-      addProduct(res);
+    connection.query(
+      "INSERT INTO products SET ?",
+      {
+        item_id: res.item_id,
+        product_name: res.product_name,
+        department_name: res.department_name,
+        price: res.price,
+        stock_quality: res.stock_quality
+      }, function(err, res){
+        if (err) throw err;
+        console.log(` ${res.affectedRows} product inserted!`)
+        showProducts();
+      }
+    )
   })
-}
-
-//Adds Products with MySQL (Part 2)
-function addProduct() {
-  console.log("Inserting a new product...\n");
-  var query = connection.query(
-    "INSERT INTO products SET ?",
-    {
-      artist: res.price,
-      title: "Satan Prometheus",
-      genre: "Black Metal"
-    }, function(err, res){
-      if (err) throw err;
-      console.log(` ${res.affectedRows} song inserted!`)
-      updateDB();
-    }
-  )
-  console.log(query.sql);
 }

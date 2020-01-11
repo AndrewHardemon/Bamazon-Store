@@ -19,4 +19,9 @@ VALUES (1111, "Bananas", "Food Feeder", 2.10, 50),
 (2352, "Robot Baby", "RobotLand", 222.22, 10),
 (9764, "Wedding Ring", "Chain 'em n' Drain 'em", 1000.00, 5),
 (3434, "Combat Boots", "Stompin Ground", 45.50, 20),
-(2222, "Children", "Planned Parenthood", 333.33, 0)
+(2222, "Children", "Planned Parenthood", 333.33, 0),
+(3333, "Igloo", "Far North Neighbors", 121.21, 6),
+(4523, "Treadmill", "Buy Once, Use Once", 600.50, 15),
+(8898, "Bottled Tears", "Cry more Buy more", 10.10, 10),
+(3456, "Snake Oil", "Plague Doctor Inc", 50.00, 30),
+(9999, "Video Game", "Gaming the Gamers", 69.99, 2)
