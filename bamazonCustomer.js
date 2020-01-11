@@ -20,33 +20,71 @@ connection.connect(function(err) {
 function menuCustomer(){
   inquirer.prompt([
     {
-      type: "list",
+      type: "expand",
       name: "menu",
       message: "Menu Options",
-      choices: ["View Products for Sale", "View Low Inventory", "Add to Inventory", "Add New Product", "Exit"]
+      choices: [
+        {
+          key: 'a',
+          name: "View Products for Sale",
+          value: "products"
+        },
+        {
+          key: 'b',
+          name: "Buy Item",
+          value: "buy"
+        },
+        {
+          key: 'c',
+          name: "View Low Inventory",
+          value: "inventory"
+        },
+        {
+          key: 'd',
+          name: "Add to Inventory",
+          value: "add"
+        },
+        {
+          key: 'z',
+          name: "Add New Product",
+          value: "new"
+        },
+        new inquirer.Separator(),
+        {
+          key: 'e',
+          name: "Exit",
+          value: 'exit'
+        }
+      ]
     }
   ]).then(function(res) {
     //Which was picked
-    if (res.menu === "View Products for Sale") {
+    console.log(res.menu);
+    if (res.menu === "products") {
       console.log("Products");
       afterConnection();
       menuCustomer();
     }
-    else if (res.menu === "View Low Inventory") {
+    if (res.menu === "buy") {
+      console.log("Buy it");
+      buyProduct();
+      //menuCustomer();
+    }
+    else if (res.menu === "inventory") {
       console.log("Products lower than 5")
       lowConnection();
-      menuCustomer();
+      //menuCustomer();
     }
-    else if (res.menu === "Add to Inventory") {
+    else if (res.menu === "add") {
       console.log("this works")
       updateProduct()
     }
-    else if (res.menu === "Add New Product") {
+    else if (res.menu === "new") {
       console.log("this works")
       inquirerAdd();
       addProduct();
     }
-    else if (res.menu === "Exit") {
+    else if (res.menu === "exit") {
       console.log("this works")
       connection.end();
     }
@@ -62,72 +100,79 @@ function afterConnection() {
     if (err) throw err;
     console.log(res);
     //connection.end();
-    inquirer.prompt([
-      {
-        type: "input",
-        message: "Give the ID of the product you want",
-        name: "name"
-      },
-      {
-        type: "input",
-        message: "How many of the product do you want",
-        name: "num"
-      }
-    ]).then(function(res) {
-        buyProduct(res.name, res.num);
-    })
   });
 }
 
+
 //Buy the Product
-function buyProduct(name, num){
-  connection.query("SELECT * FROM products WHERE item_id = ?", [name], function(err, res){
-  if (err) throw err;
-  if(res.stock_quality === 0){
-    console.log("Insuffecient Funds")
-  } else {
-    console.log(res.price)
-    updateProduct(name, -1)
+function buyProduct(){
+  inquirer.prompt([
+    {
+      type: "input",
+      message: "Give the name of the product you want",
+      name: "name"
+    },
+    {
+      type: "input",
+      message: "How many of the product do you want",
+      name: "num"
+    }
+  ]).then(function(res) {
+    console.log(res.name);
+    console.log(res.num);
+    checkProduct(res.name, res.num);
+    })
   }
+
+//Check the product if you can buy it
+function checkProduct(name, num){
+  // name = parseInt(name)
+  num = parseInt(num)
+    connection.query("SELECT * FROM products WHERE product_name = ?", [name], function(err, res){
+    if (err) throw err;
+    console.log(res)
+    //console.log(res[0].stock_quality)
+    var amount = parseInt(res[0].stock_quality) - num
+    
+    if(res.stock_quality === 0){
+      console.log("Insuffecient Funds")
+    } else {
+      var diff = res[0].stock_quality + (num * -1);
+      console.log(res[0].price * num)
+      console.log(`There are ${amount} ${name} left`)
+      updateProduct(name, diff)
+    }
   })
+}
+
+//Add more stock to a product
+function updateProduct(name, diff) {
+  //connection.query("SQL STRING", arguments, callback()) //This is the order of operations
+ connection.query(
+      "UPDATE products SET ? WHERE ?",
+      [
+        {
+          stock_quality: diff
+        },
+        {
+          product_name: name
+        }
+      ],
+      function(err, res) {
+        if (err) throw err;
+        console.log(name + " have been updated!\n");
+        menuCustomer();
+      });
 }
 
 //Check for low stock products
 function lowConnection() {
   connection.query("SELECT * FROM products WHERE stock_quality <= 5", function(err, res) {
     if (err) throw err;
-    //console.log(res);
+    console.log(res);
     //connection.end();
   });
 }
-
-//Add more stock to a product
-function updateProduct(name, addSub) {
-  console.log(`Updating all genre of songs titled Eaten...\n`);
-  //connection.query("SQL STRING", arguments, callback()) //This is the order of operations
-  connection.query("SELECT * FROM products WHERE item_id = ?", [name], function(err, res) {
-    if (err) throw err;
-    var nuNum = res.stock_quality + num
-    var query = connection.query(
-      "UPDATE products SET ? WHERE ?",
-      [
-        {
-          quantity: 100
-        },
-        {
-          item_id: name
-        }
-      ],
-      function(err, res) {
-        if (err) throw err;
-        console.log(res.affectedRows + " products updated!\n");
-        // Call deleteProduct AFTER the UPDATE completes
-        deleteProduct();
-      });
-  });
-}
-
-
 
 //Helps add new product using inquirer (Part 1)
 function inquirerAdd(){
